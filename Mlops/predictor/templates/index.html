@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Predicción de Ventas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            color: black;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #resultado {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+        }
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Predicción de Ventas hasta 24 meses</h1>
+        <label>Ingrese el mes:</label>
+        <input type="number" id="mes" placeholder="Ingrese el mes" min="1" max="24">
+        <button onclick="predict()">Predecir</button>
+        <p id="resultado"></p>
+        
+        <div id="loading">
+            <img src="https://i.gifer.com/ZZ5H.gif" width="50">
+            <p>Cargando predicción...</p>
+        </div>
+        
+        <canvas id="salesChart" width="400" height="200"></canvas>
+    </div>
+    
+    <script>
+        let salesChart;
+
+        function predict() {
+            let mes = document.getElementById('mes').value;
+            document.getElementById('resultado').innerText = "";
+            document.getElementById('loading').style.display = "block";
+
+            fetch(`/predict/?mes=${mes}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = "none";
+                    document.getElementById('resultado').innerText = `Predicción de ventas: ${data.prediccion_ventas.toFixed(2)}`;
+                    updateChart(mes, data.prediccion_ventas);
+                });
+        }
+
+        function updateChart(mes, prediccion) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'Predicción de Ventas',
+                        data: Array.from({ length: 24 }, (_, i) => (i + 1 == mes ? prediccion : null)),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mes'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Ventas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
